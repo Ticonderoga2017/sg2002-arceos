@@ -1,4 +1,4 @@
-use alloc::{string::String, vec};
+use alloc::{boxed::Box, string::String, vec};
 use core::task::Waker;
 
 use axdriver::prelude::*;
@@ -27,7 +27,7 @@ struct Neighbor {
 
 pub struct EthernetDevice {
     name: String,
-    inner: AxNetDevice,
+    inner: Box<dyn NetDriverOps>,
     neighbors: HashMap<IpAddress, Option<Neighbor>>,
     ip: Ipv4Cidr,
 
@@ -36,7 +36,7 @@ pub struct EthernetDevice {
 impl EthernetDevice {
     const NEIGHBOR_TTL: Duration = Duration::from_secs(60);
 
-    pub fn new(name: String, inner: AxNetDevice, ip: Ipv4Cidr) -> Self {
+    pub fn new(name: String, inner: Box<dyn NetDriverOps>, ip: Ipv4Cidr) -> Self {
         let pending_packets = PacketBuffer::new(
             vec![PacketMetadata::EMPTY; ETHERNET_MAX_PENDING_PACKETS],
             vec![
@@ -61,7 +61,7 @@ impl EthernetDevice {
     }
 
     fn send_to<F>(
-        inner: &mut AxNetDevice,
+        inner: &mut Box<dyn NetDriverOps>,
         dst: EthernetAddress,
         size: usize,
         f: F,

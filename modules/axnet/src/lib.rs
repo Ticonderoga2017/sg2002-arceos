@@ -79,7 +79,7 @@ pub fn init_network(mut net_devs: AxDeviceContainer<AxNetDevice>) {
 
         let eth0_dev = router.add_device(Box::new(EthernetDevice::new(
             "eth0".to_owned(),
-            dev,
+            Box::new(dev),
             eth0_ip,
         )));
 
@@ -134,4 +134,45 @@ pub fn init_vsock(mut vsock_devs: AxDeviceContainer<AxVsockDevice>) {
 
 pub fn poll_interfaces() {
     while SERVICE.lock().poll(&mut SOCKET_SET.inner.lock()) {}
+}
+
+/// Register a network device after `init_network()` has been called.  
+///  
+/// Used for devices that are initialized asynchronously (e.g., Wi-Fi).  
+/// The device will be added to the router as "wlan0" with the specified  
+/// IP address, prefix length, and gateway.  
+pub fn register_net_device(  
+    dev: Box<dyn NetDriverOps>,  
+    ip: &str,  
+    prefix: u8,  
+    gateway: &str,  
+) {
+    let eth_address = EthernetAddress(dev.mac_address().0);
+    let dev_ip = Ipv4Cidr::new(  
+        ip.parse().expect("Invalid IPv4 address for Wi-Fi device"),  
+        prefix,  
+    );  
+
+    let mut service = SERVICE.lock();  
+  
+    let dev_idx = service.router.add_device(Box::new(EthernetDevice::new(  
+        "wlan0".to_owned(),  
+        dev,  
+        dev_ip,  
+    )));  
+  
+    service.router.add_rule(Rule::new(  
+        Ipv4Cidr::new(Ipv4Address::UNSPECIFIED, 0).into(),  
+        Some(gateway.parse().expect("Invalid gateway address for Wi-Fi device")),  
+        dev_idx,  
+        dev_ip.address().into(),  
+    ));  
+  
+    service.iface.update_ip_addrs(|ip_addrs| {  
+        ip_addrs.push(dev_ip.into()).unwrap();  
+    });  
+  
+    info!("wlan0:");  
+    info!("  mac:  {}", eth_address);  
+    info!("  ip:   {}", dev_ip);  
 }
