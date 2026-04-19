@@ -263,7 +263,7 @@ impl<G: BaseGuard> AxRunQueueRef<'_, G> {
         {
             // Since now, the task to be unblocked is in the `Ready` state.
             let cpu_id = self.inner.cpu_id;
-            debug!("task unblock: {task_id_name} on run_queue {cpu_id}");
+            trace!("task unblock: {task_id_name} on run_queue {cpu_id}");
             // Note: when the task is unblocked on another CPU's run queue,
             // we just ingiore the `resched` flag.
             if resched && cpu_id == this_cpu_id() {
@@ -413,7 +413,7 @@ impl<G: BaseGuard> CurrentRunQueueRef<'_, G> {
         // Note that the state may have been set as `Ready` in `unblock_task()`,
         // see `unblock_task()` for details.
 
-        debug!("task block: {}", curr.id_name());
+        trace!("task block: {}", curr.id_name());
         self.inner.resched();
     }
 
