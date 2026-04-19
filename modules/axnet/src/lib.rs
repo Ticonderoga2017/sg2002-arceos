@@ -133,7 +133,8 @@ pub fn init_vsock(mut vsock_devs: AxDeviceContainer<AxVsockDevice>) {
 }
 
 pub fn poll_interfaces() {
-    while SERVICE.lock().poll(&mut SOCKET_SET.inner.lock()) {}
+    SERVICE.lock().poll(&mut SOCKET_SET.inner.lock()); 
+    // while SERVICE.lock().poll(&mut SOCKET_SET.inner.lock()) {}
 }
 
 /// Register a network device after `init_network()` has been called.  
@@ -155,17 +156,17 @@ pub fn register_net_device(
 
     let mut service = SERVICE.lock();  
   
-    let dev_idx = service.router.add_device(Box::new(EthernetDevice::new(  
-        "wlan0".to_owned(),  
-        dev,  
-        dev_ip,  
-    )));  
-  
-    service.router.add_rule(Rule::new(  
-        Ipv4Cidr::new(Ipv4Address::UNSPECIFIED, 0).into(),  
-        Some(gateway.parse().expect("Invalid gateway address for Wi-Fi device")),  
-        dev_idx,  
-        dev_ip.address().into(),  
+    let dev_idx = service.router.add_device(Box::new(EthernetDevice::new(
+        "wlan0".to_owned(),
+        dev,
+        dev_ip,
+    )));
+
+    service.router.add_rule(Rule::new(
+        Ipv4Cidr::new(Ipv4Address::UNSPECIFIED, 0).into(),
+        Some(gateway.parse().expect("Invalid gateway address for Wi-Fi device")),
+        dev_idx,
+        dev_ip.address().into(),
     ));  
   
     service.iface.update_ip_addrs(|ip_addrs| {  
